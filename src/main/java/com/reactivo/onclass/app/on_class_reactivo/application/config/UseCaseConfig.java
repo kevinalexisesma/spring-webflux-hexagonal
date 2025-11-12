@@ -3,7 +3,9 @@ package com.reactivo.onclass.app.on_class_reactivo.application.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
+import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.CapabilityUseCase;
 import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.TechnologyUseCase;
 
 @Configuration
@@ -11,5 +13,10 @@ public class UseCaseConfig {
     @Bean
     public TechnologyUseCase technologyUseCase(TechnologyRepository repository) {
         return new TechnologyUseCase(repository);
+    }
+
+    @Bean
+    public CapabilityUseCase capabilityUseCase(CapabilityRepository repository) {
+        return new CapabilityUseCase(repository);
     }
 }
