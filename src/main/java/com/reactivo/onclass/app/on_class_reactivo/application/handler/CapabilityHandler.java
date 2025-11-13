@@ -39,4 +39,16 @@ public class CapabilityHandler {
                 .contentType(APPLICATION_JSON)
                 .body(useCase.getAllCapabilities(), Capability.class);
     }
+
+    public Mono<ServerResponse> findAllPaginated(ServerRequest request) {
+        String sortBy = request.queryParam("sortBy").orElse("nombre");
+        String order = request.queryParam("order").orElse("asc");
+        int page = Integer.parseInt(request.queryParam("page").orElse("0"));
+        int size = Integer.parseInt(request.queryParam("size").orElse("5"));
+
+        return ServerResponse.ok()
+                .contentType(APPLICATION_JSON)
+                .body(useCase.getAllCapabilities(sortBy, order, page, size), Capability.class);
+    }
+
 }

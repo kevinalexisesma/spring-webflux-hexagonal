@@ -16,6 +16,6 @@ public class CapabilityRouter {
     @Bean
     public RouterFunction<ServerResponse> capabilityRoutes(CapabilityHandler handler) {
         return route(POST("/capabilities"), handler::create)
-                .andRoute(GET("/capabilities"), handler::findAll);
+                .andRoute(GET("/capabilities"), handler::findAllPaginated);
     }
 }
