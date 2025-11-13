@@ -67,7 +67,8 @@ class CapabilityUseCaseTest {
 
         StepVerifier.create(useCase.createCapability(capability))
                 .expectErrorMatches(error -> error instanceof IllegalArgumentException &&
-                        error.getMessage().equals("Debe tener al menos 3 tecnologías asociadas"))
+                        error.getMessage()
+                                .equals("Debe tener al menos 3 tecnologías asociadas"))
                 .verify();
 
         Mockito.verify(repository, Mockito.never()).save(Mockito.any());
@@ -87,7 +88,8 @@ class CapabilityUseCaseTest {
 
         StepVerifier.create(useCase.createCapability(capability))
                 .expectErrorMatches(error -> error instanceof IllegalArgumentException &&
-                        error.getMessage().equals("No puede tener más de 20 tecnologías asociadas"))
+                        error.getMessage().equals(
+                                "No puede tener más de 20 tecnologías asociadas"))
                 .verify();
 
         Mockito.verify(repository, Mockito.never()).save(Mockito.any());
@@ -152,4 +154,58 @@ class CapabilityUseCaseTest {
 
         Mockito.verify(repository).findAll();
     }
+
+    @Test
+    void getAllCapabilities_shouldSortByNameAscending() {
+        var cap1 = Capability.builder()
+                .id("1").nombre("Backend").tecnologias(List.of()).build();
+        var cap2 = Capability.builder()
+                .id("2").nombre("Frontend").tecnologias(List.of()).build();
+
+        Mockito.when(repository.findAll()).thenReturn(Flux.just(cap2, cap1));
+
+        StepVerifier.create(useCase.getAllCapabilities("nombre", "asc", 0, 10))
+                .expectNextMatches(cap -> cap.getNombre().equals("Backend"))
+                .expectNextMatches(cap -> cap.getNombre().equals("Frontend"))
+                .verifyComplete();
+    }
+
+    @Test
+    void getAllCapabilities_shouldSortByTechCountDescending() {
+        var cap1 = Capability.builder()
+                .id("1").nombre("A").tecnologias(List.of(
+                        new Technology("1", "Java", ""), new Technology("2", "Mongo", "")))
+                .build();
+        var cap2 = Capability.builder()
+                .id("2").nombre("B").tecnologias(List.of(
+                        new Technology("3", "Spring", ""),
+                        new Technology("4", "JUnit", ""),
+                        new Technology("5", "Docker", "")))
+                .build();
+
+        Mockito.when(repository.findAll()).thenReturn(Flux.just(cap1, cap2));
+
+        StepVerifier.create(useCase.getAllCapabilities("cantidad", "desc", 0, 10))
+                .expectNextMatches(cap -> cap.getNombre().equals("B"))
+                .expectNextMatches(cap -> cap.getNombre().equals("A"))
+                .verifyComplete();
+    }
+
+    @Test
+    void getAllCapabilities_shouldPaginateCorrectly() {
+        var caps = IntStream.range(0, 6)
+                .mapToObj(i -> Capability.builder()
+                        .id(String.valueOf(i))
+                        .nombre("Cap" + i)
+                        .tecnologias(List.of()).build())
+                .toList();
+
+        Mockito.when(repository.findAll()).thenReturn(Flux.fromIterable(caps));
+
+        StepVerifier.create(useCase.getAllCapabilities("nombre", "asc", 1, 2))
+                .expectNextMatches(cap -> cap.getNombre().equals("Cap2"))
+                .expectNextMatches(cap -> cap.getNombre().equals("Cap3"))
+                .verifyComplete();
+    }
+
 }

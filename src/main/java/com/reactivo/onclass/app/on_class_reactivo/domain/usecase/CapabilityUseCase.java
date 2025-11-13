@@ -50,4 +50,34 @@ public class CapabilityUseCase {
     public Flux<Capability> getAllCapabilities() {
         return repository.findAll();
     }
+
+    public Flux<Capability> getAllCapabilities(
+            String sortBy, String order, int page, int size) {
+
+        return repository.findAll()
+                .sort((c1, c2) -> {
+                    // Ordenar según parámetro
+                    int comparison;
+                    if ("cantidad".equalsIgnoreCase(sortBy)) {
+                        comparison = Integer.compare(
+                                c1.getTecnologias().size(),
+                                c2.getTecnologias().size());
+                    } else { // por nombre
+                        comparison = c1.getNombre().compareToIgnoreCase(c2.getNombre());
+                    }
+                    // Aplicar orden descendente si se pide
+                    return "desc".equalsIgnoreCase(order) ? -comparison : comparison;
+                })
+                .skip((long) page * size)
+                .take(size)
+                .map(cap -> {
+                    // Solo devolver tecnologías con id y nombre
+                    var reducedTechs = cap.getTecnologias().stream()
+                            .map(t -> new Technology(t.getId(), t.getNombre(), null))
+                            .toList();
+                    cap.setTecnologias(reducedTechs);
+                    return cap;
+                });
+    }
+
 }
