@@ -15,6 +15,7 @@ public class BootCampRouter {
 
     @Bean
     public RouterFunction<?> bootcampRoutes(BootcampHandler handler) {
-        return route(POST("/bootcamps").and(accept(MediaType.APPLICATION_JSON)), handler::create);
+        return route(POST("/bootcamps").and(accept(MediaType.APPLICATION_JSON)), handler::create)
+                .andRoute(GET("/bootcamps"), handler::findAllPaginated);        
     }
 }

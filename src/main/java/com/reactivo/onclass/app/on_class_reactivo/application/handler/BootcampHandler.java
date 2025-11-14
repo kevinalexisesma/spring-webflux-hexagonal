@@ -5,6 +5,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Bootcamp;
+import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.BootcampUseCase;
 
 import jakarta.validation.Validator;
@@ -33,5 +34,16 @@ public class BootcampHandler {
                             .flatMap(saved -> ServerResponse.ok().contentType(APPLICATION_JSON).bodyValue(saved))
                             .onErrorResume(e -> ServerResponse.badRequest().bodyValue(e.getMessage()));
                 });
+    }
+
+    public Mono<ServerResponse> findAllPaginated(ServerRequest request) {
+        String sortBy = request.queryParam("sortBy").orElse("nombre");
+        String order = request.queryParam("order").orElse("asc");
+        int page = Integer.parseInt(request.queryParam("page").orElse("0"));
+        int size = Integer.parseInt(request.queryParam("size").orElse("5"));
+
+        return ServerResponse.ok()
+                .contentType(APPLICATION_JSON)
+                .body(useCase.getAllBootcamp(sortBy, order, page, size), Bootcamp.class);
     }
 }
