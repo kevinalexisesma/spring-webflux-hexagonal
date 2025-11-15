@@ -31,4 +31,9 @@ public class MongoTechnologyRepositoryAdapter implements TechnologyRepository {
     public Mono<Boolean> existsByNombre(String nombre) {
         return repository.existsByNombre(nombre);
     }
+
+    @Override
+    public Mono<Technology> findById(String id) {
+        return repository.findById(id);
+    }
 }

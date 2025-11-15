@@ -12,4 +12,6 @@ public interface CapabilityRepository {
     Flux<Capability> findAll();
 
     Mono<Boolean> existsByNombre(String nombre);
+
+    Mono<Capability> findById(String id);
 }

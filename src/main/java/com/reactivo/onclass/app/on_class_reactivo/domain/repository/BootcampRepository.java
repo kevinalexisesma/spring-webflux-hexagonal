@@ -12,4 +12,8 @@ public interface BootcampRepository {
     Flux<Bootcamp> findAll();
 
     Mono<Boolean> existsByNombre(String nombre);
+
+    Mono<Bootcamp> findById(String id);
+
+    Mono<Void> deleteById(String id);
 }

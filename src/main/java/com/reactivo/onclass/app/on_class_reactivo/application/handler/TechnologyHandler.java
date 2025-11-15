@@ -11,6 +11,9 @@ import jakarta.validation.Validator;
 import reactor.core.publisher.Mono;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
+import java.util.List;
+import java.util.Map;
+
 @Component
 public class TechnologyHandler {
 
@@ -27,7 +30,14 @@ public class TechnologyHandler {
                 .flatMap(tech -> {
                     var violations = validator.validate(tech);
                     if (!violations.isEmpty()) {
-                        return ServerResponse.badRequest().bodyValue(violations);
+                        List<String> errors = violations.stream()
+                                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                                .toList();
+
+                        Map<String, Object> errorBody = Map.of("errors", errors);
+                        return ServerResponse.badRequest()
+                                .contentType(APPLICATION_JSON)
+                                .bodyValue(errorBody);
                     }
                     return useCase.createTechnology(tech)
                             .flatMap(saved -> ServerResponse.ok().contentType(APPLICATION_JSON).bodyValue(saved))

@@ -32,4 +32,14 @@ public class MongoBootcampRepositoryAdapter implements BootcampRepository {
         return repository.existsByNombre(nombre);
     }
 
+    @Override
+    public Mono<Bootcamp> findById(String id) {
+        return repository.findById(id);
+    }
+
+    @Override
+    public Mono<Void> deleteById(String id) {
+        return repository.deleteById(id);
+    }
+
 }

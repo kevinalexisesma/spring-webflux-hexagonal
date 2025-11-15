@@ -5,12 +5,14 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Bootcamp;
-import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.BootcampUseCase;
 
 import jakarta.validation.Validator;
 import reactor.core.publisher.Mono;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
+
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class BootcampHandler {
@@ -28,7 +30,15 @@ public class BootcampHandler {
                 .flatMap(tech -> {
                     var violations = validator.validate(tech);
                     if (!violations.isEmpty()) {
-                        return ServerResponse.badRequest().bodyValue(violations);
+                        List<String> errors = violations.stream()
+                                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                                .toList();
+
+                        Map<String, Object> errorBody = Map.of("errors", errors);
+                        return ServerResponse.badRequest()
+                                .contentType(APPLICATION_JSON)
+                                .bodyValue(errorBody);
+
                     }
                     return useCase.createBootcamp(tech)
                             .flatMap(saved -> ServerResponse.ok().contentType(APPLICATION_JSON).bodyValue(saved))

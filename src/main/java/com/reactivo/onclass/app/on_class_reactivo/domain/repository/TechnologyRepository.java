@@ -11,4 +11,6 @@ public interface TechnologyRepository {
     Flux<Technology> findAll();
 
     Mono<Boolean> existsByNombre(String nombre);
+
+    Mono<Technology> findById(String id);
 }

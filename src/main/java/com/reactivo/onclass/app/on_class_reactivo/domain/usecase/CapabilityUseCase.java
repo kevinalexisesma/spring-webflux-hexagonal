@@ -6,6 +6,7 @@ import java.util.List;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Technology;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -13,31 +14,31 @@ import reactor.core.publisher.Mono;
 public class CapabilityUseCase {
 
     private final CapabilityRepository repository;
+    private final TechnologyRepository technologyRepository;
 
-    public CapabilityUseCase(CapabilityRepository repository) {
+    public CapabilityUseCase(CapabilityRepository repository, TechnologyRepository technologyRepository) {
         this.repository = repository;
+        this.technologyRepository = technologyRepository;
     }
 
     public Mono<Capability> createCapability(Capability capability) {
-        List<Technology> tecnologias = capability.getTecnologias();
+        List<String> technologyIds = capability.getTechnologyIds();
 
-        if (tecnologias == null || tecnologias.size() < 3) {
+        if (technologyIds == null || technologyIds.size() < 3) {
             return Mono.error(new IllegalArgumentException("Debe tener al menos 3 tecnologías asociadas"));
         }
 
-        if (tecnologias.size() > 20) {
+        if (technologyIds.size() > 20) {
             return Mono.error(new IllegalArgumentException("No puede tener más de 20 tecnologías asociadas"));
         }
 
-        // Validar duplicados
-        var nombres = new HashSet<String>();
-        for (Technology tech : tecnologias) {
-            if (!nombres.add(tech.getNombre())) {
+        var idsSet = new HashSet<String>();
+        for (String techId : technologyIds) {
+            if (!idsSet.add(techId)) {
                 return Mono.error(new IllegalArgumentException("Existen tecnologías repetidas"));
             }
         }
 
-        // Verificar nombre único
         return repository.existsByNombre(capability.getNombre())
                 .flatMap(exists -> {
                     if (exists) {
@@ -56,27 +57,36 @@ public class CapabilityUseCase {
 
         return repository.findAll()
                 .sort((c1, c2) -> {
-                    // Ordenar según parámetro
                     int comparison;
                     if ("cantidad".equalsIgnoreCase(sortBy)) {
-                        comparison = Integer.compare(
-                                c1.getTecnologias().size(),
-                                c2.getTecnologias().size());
-                    } else { // por nombre
+                        int s1 = c1.getTechnologyIds() == null ? 0 : c1.getTechnologyIds().size();
+                        int s2 = c2.getTechnologyIds() == null ? 0 : c2.getTechnologyIds().size();
+                        comparison = Integer.compare(s1, s2);
+                    } else { 
                         comparison = c1.getNombre().compareToIgnoreCase(c2.getNombre());
                     }
-                    // Aplicar orden descendente si se pide
                     return "desc".equalsIgnoreCase(order) ? -comparison : comparison;
                 })
                 .skip((long) page * size)
                 .take(size)
-                .map(cap -> {
-                    // Solo devolver tecnologías con id y nombre
-                    var reducedTechs = cap.getTecnologias().stream()
-                            .map(t -> new Technology(t.getId(), t.getNombre(), null))
-                            .toList();
-                    cap.setTecnologias(reducedTechs);
-                    return cap;
+                .flatMap(cap -> {
+                    if (cap.getTechnologyIds() == null || cap.getTechnologyIds().isEmpty()) {
+                        cap.setTechnologies(List.of());
+                        return Mono.just(cap);
+                    }
+
+                    return Flux.fromIterable(cap.getTechnologyIds())
+                            .flatMap(techId -> technologyRepository.findById(techId))
+                            .map(tech -> Technology.builder()
+                                    .id(tech.getId())
+                                    .nombre(tech.getNombre())
+                                    .descripcion(null) 
+                                    .build())
+                            .collectList()
+                            .map(techList -> {
+                                cap.setTechnologies(techList);
+                                return cap;
+                            });
                 });
     }
 

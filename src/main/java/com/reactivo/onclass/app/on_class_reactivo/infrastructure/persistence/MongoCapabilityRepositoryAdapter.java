@@ -31,4 +31,9 @@ public class MongoCapabilityRepositoryAdapter implements CapabilityRepository {
     public Mono<Boolean> existsByNombre(String nombre) {
         return repository.existsByNombre(nombre);
     }
+
+    @Override
+    public Mono<Capability> findById(String id) {
+        return repository.findById(id);
+    }
 }
