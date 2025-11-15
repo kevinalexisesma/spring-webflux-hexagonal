@@ -5,32 +5,39 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Bootcamp;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Technology;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampRepository;
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import static org.mockito.ArgumentMatchers.anyString;
 import reactor.test.StepVerifier;
 
 public class BootcampUseCaseTest {
 
-    @Mock
     private BootcampRepository repository;
-
+    private CapabilityRepository capabilityRepository;
+    private TechnologyRepository technologyRepository;
     private BootcampUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        useCase = new BootcampUseCase(repository);
+        repository = Mockito.mock(BootcampRepository.class);
+        capabilityRepository = Mockito.mock(CapabilityRepository.class);
+        technologyRepository = Mockito.mock(TechnologyRepository.class);
+        useCase = new BootcampUseCase(repository, capabilityRepository, technologyRepository);
     }
 
     @Test
@@ -40,7 +47,7 @@ public class BootcampUseCaseTest {
                 .descripcion("Desarrollo completo")
                 .fechaLanzamiento(LocalDate.now())
                 .duracion("10 semanas")
-                .capacidades(List.of(new Capability("1", "Frontend", "HTML/CSS/JS", List.of())))
+                .capabilityIds(List.of("1"))
                 .build();
 
         when(repository.existsByNombre("Full Stack")).thenReturn(Mono.just(false));
@@ -58,40 +65,41 @@ public class BootcampUseCaseTest {
                 .descripcion("Prueba")
                 .fechaLanzamiento(LocalDate.now())
                 .duracion("8 semanas")
-                .capacidades(List.of(
-                        new Capability(), new Capability(),
-                        new Capability(), new Capability(), new Capability()))
+                .capabilityIds(List.of("1", "2", "3", "4", "5")) // 5 > 4
                 .build();
 
         StepVerifier.create(useCase.createBootcamp(bootcamp))
-                .expectError(IllegalArgumentException.class)
+                .expectErrorMatches(err -> err instanceof IllegalArgumentException &&
+                        err.getMessage().equals(
+                                "No puede tener más de 4 capacidades asociadas."))
                 .verify();
     }
 
-    private Bootcamp bootcamp(String id, String nombre, int capacidadesCount) {
+    private Bootcamp bootcamp(String id, String nombre, int capabilityCount) {
+        List<String> ids = IntStream.range(0, capabilityCount)
+                .mapToObj(i -> "cap" + i)
+                .toList();
+
         return Bootcamp.builder()
                 .id(id)
                 .nombre(nombre)
                 .descripcion(null)
                 .duracion("10 semanas")
                 .fechaLanzamiento(LocalDate.now())
-                .capacidades(
-                        capacidadesCount == 0
-                                ? List.of()
-                                : List.of(cap("c1", capacidadesCount)))
+                .capabilityIds(ids)
                 .build();
     }
 
     private Capability cap(String id, int technologies) {
+        List<String> techIds = IntStream.range(0, technologies)
+                .mapToObj(i -> "t" + i)
+                .toList();
+
         return Capability.builder()
                 .id(id)
                 .nombre("Cap " + id)
                 .descripcion(null)
-                .tecnologias(
-                        technologies == 0
-                                ? List.of()
-                                : List.of(Technology.builder().id("t1").nombre("Tec 1")
-                                        .build()))
+                .technologyIds(techIds)
                 .build();
     }
 
@@ -102,9 +110,13 @@ public class BootcampUseCaseTest {
 
         when(repository.findAll()).thenReturn(Flux.just(b2, b1));
 
+        // Capabilities enriquecidas (mock mínimo)
+        when(capabilityRepository.findById(anyString()))
+                .thenReturn(Mono.just(cap("capX", 0)));
+
         StepVerifier.create(useCase.getAllBootcamp("nombre", "asc", 0, 10))
-                .expectNext(b1)
-                .expectNext(b2)
+                .expectNextMatches(b -> b.getNombre().equals("Angular Bootcamp"))
+                .expectNextMatches(b -> b.getNombre().equals("React Bootcamp"))
                 .verifyComplete();
     }
 
@@ -114,10 +126,12 @@ public class BootcampUseCaseTest {
         Bootcamp b2 = bootcamp("2", "React Bootcamp", 1);
 
         when(repository.findAll()).thenReturn(Flux.just(b1, b2));
+        when(capabilityRepository.findById(anyString()))
+                .thenReturn(Mono.just(cap("capX", 0)));
 
         StepVerifier.create(useCase.getAllBootcamp("nombre", "desc", 0, 10))
-                .expectNext(b2)
-                .expectNext(b1)
+                .expectNextMatches(b -> b.getNombre().equals("React Bootcamp"))
+                .expectNextMatches(b -> b.getNombre().equals("Angular Bootcamp"))
                 .verifyComplete();
     }
 
@@ -128,11 +142,13 @@ public class BootcampUseCaseTest {
         Bootcamp b3 = bootcamp("3", "Bootcamp C", 3);
 
         when(repository.findAll()).thenReturn(Flux.just(b1, b2, b3));
+        when(capabilityRepository.findById(anyString()))
+                .thenReturn(Mono.just(cap("capX", 0)));
 
         StepVerifier.create(useCase.getAllBootcamp("cantidad", "asc", 0, 10))
-                .expectNext(b1) // 1 capacidad
-                .expectNext(b2) // 2 capacidades
-                .expectNext(b3) // 3 capacidades
+                .expectNextMatches(b -> b.getCapabilityIds().size() == 1)
+                .expectNextMatches(b -> b.getCapabilityIds().size() == 2)
+                .expectNextMatches(b -> b.getCapabilityIds().size() == 3)
                 .verifyComplete();
     }
 
@@ -143,11 +159,13 @@ public class BootcampUseCaseTest {
         Bootcamp b3 = bootcamp("3", "Bootcamp C", 3);
 
         when(repository.findAll()).thenReturn(Flux.just(b3, b2, b1));
+        when(capabilityRepository.findById(anyString()))
+                .thenReturn(Mono.just(cap("capX", 0)));
 
         StepVerifier.create(useCase.getAllBootcamp("cantidad", "desc", 0, 10))
-                .expectNext(b3) // 3 capacidades
-                .expectNext(b2) // 2
-                .expectNext(b1) // 1
+                .expectNextMatches(b -> b.getCapabilityIds().size() == 3)
+                .expectNextMatches(b -> b.getCapabilityIds().size() == 2)
+                .expectNextMatches(b -> b.getCapabilityIds().size() == 1)
                 .verifyComplete();
     }
 
@@ -158,22 +176,16 @@ public class BootcampUseCaseTest {
         Bootcamp b3 = bootcamp("3", "Gamma", 1);
 
         when(repository.findAll()).thenReturn(Flux.just(b1, b2, b3));
+        when(capabilityRepository.findById(anyString()))
+                .thenReturn(Mono.just(cap("capX", 0)));
 
         StepVerifier.create(useCase.getAllBootcamp("nombre", "asc", 1, 1))
-                .expectNext(b2) // página 1, size 1 => segundo elemento
+                .expectNextMatches(b -> b.getNombre().equals("Beta"))
                 .verifyComplete();
     }
 
     @Test
     void listBootcamps_MappingCapabilitiesAndTechnologies() {
-        Capability cap = Capability.builder()
-                .id("cap1")
-                .nombre("Frontend")
-                .descripcion("No debe venir")
-                .tecnologias(List.of(
-                        Technology.builder().id("t1").nombre("React").build(),
-                        Technology.builder().id("t2").nombre("Angular").build()))
-                .build();
 
         Bootcamp b = Bootcamp.builder()
                 .id("b1")
@@ -181,21 +193,32 @@ public class BootcampUseCaseTest {
                 .descripcion("descripcion")
                 .duracion("10 semanas")
                 .fechaLanzamiento(LocalDate.now())
-                .capacidades(List.of(cap))
+                .capabilityIds(List.of("cap1"))
                 .build();
 
+        Capability cap = Capability.builder()
+                .id("cap1")
+                .nombre("Frontend")
+                .technologyIds(List.of("t1", "t2"))
+                .build();
+
+        Technology tech1 = Technology.builder().id("t1").nombre("React").build();
+        Technology tech2 = Technology.builder().id("t2").nombre("Angular").build();
+
         when(repository.findAll()).thenReturn(Flux.just(b));
+        when(capabilityRepository.findById("cap1")).thenReturn(Mono.just(cap));
+        when(technologyRepository.findById("t1")).thenReturn(Mono.just(tech1));
+        when(technologyRepository.findById("t2")).thenReturn(Mono.just(tech2));
 
         StepVerifier.create(useCase.getAllBootcamp(null, null, 0, 10))
                 .assertNext(result -> {
-                    Capability c = result.getCapacidades().get(0);
+
+                    Capability c = result.getCapabilities().get(0);
                     assert c.getId().equals("cap1");
                     assert c.getNombre().equals("Frontend");
+                    assert c.getDescripcion() == null; // mapping correcto
 
-                    // description debe haber sido eliminado en el mapeo parcial
-                    assert c.getDescripcion() == null;
-
-                    Technology t = c.getTecnologias().get(0);
+                    Technology t = c.getTechnologies().get(0);
                     assert t.getId().equals("t1");
                     assert t.getNombre().equals("React");
                 })

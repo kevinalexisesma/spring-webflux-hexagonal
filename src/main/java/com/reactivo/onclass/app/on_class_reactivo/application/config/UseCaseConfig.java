@@ -18,12 +18,12 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public CapabilityUseCase capabilityUseCase(CapabilityRepository repository) {
-        return new CapabilityUseCase(repository);
+    public CapabilityUseCase capabilityUseCase(CapabilityRepository repository, TechnologyRepository technologyRepository) {
+        return new CapabilityUseCase(repository, technologyRepository);
     }
 
     @Bean
-    public BootcampUseCase bootcampUseCase(BootcampRepository repository) {
-        return new BootcampUseCase(repository);
+    public BootcampUseCase bootcampUseCase(BootcampRepository repository, CapabilityRepository capabilityRepository, TechnologyRepository technologyRepository) {
+        return new BootcampUseCase(repository, capabilityRepository, technologyRepository);
     }
 }

@@ -3,6 +3,7 @@ package com.reactivo.onclass.app.on_class_reactivo.domain.model;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.validation.constraints.NotBlank;
@@ -29,5 +30,8 @@ public class Capability {
     private String descripcion;
 
     @NotNull(message = "Debe asociar al menos una lista de tecnologías.")
-    private List<Technology> tecnologias;
+    private List<String> technologyIds;
+
+    @Transient
+    private List<Technology> technologies;  
 }
