@@ -224,4 +224,186 @@ public class BootcampUseCaseTest {
                 })
                 .verifyComplete();
     }
+
+    @Test
+    void deleteBootcamp_shouldFail_whenBootcampNotFound() {
+        String id = "boot1";
+
+        Mockito.when(repository.findById(id))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.deleteBootcamp(id))
+                .expectErrorMatches(e ->
+                        e instanceof IllegalArgumentException &&
+                                e.getMessage().equals("Bootcamp no encontrado"))
+                .verify();
+
+        Mockito.verify(repository).findById(id);
+        Mockito.verifyNoMoreInteractions(capabilityRepository, technologyRepository);
+    }
+
+    @Test
+    void deleteBootcamp_shouldDeleteCapabilitiesNotUsedByOthers() {
+
+        String bootcampId = "boot1";
+        String capId = "cap1";
+
+        Bootcamp b = Bootcamp.builder()
+                .id(bootcampId)
+                .nombre("FullStack")
+                .capabilityIds(List.of(capId))
+                .build();
+
+        Capability cap = Capability.builder()
+                .id(capId)
+                .nombre("Frontend")
+                .technologyIds(List.of())
+                .build();
+
+        Mockito.when(repository.findById(bootcampId))
+                .thenReturn(Mono.just(b));
+
+        Mockito.when(repository.countByCapabilityIdsContains(capId))
+                .thenReturn(Mono.just(1L));
+
+        Mockito.when(capabilityRepository.findById(capId))
+                .thenReturn(Mono.just(cap));
+
+        Mockito.when(capabilityRepository.deleteById(capId))
+                .thenReturn(Mono.empty());
+
+        Mockito.when(repository.deleteById(bootcampId))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.deleteBootcamp(bootcampId))
+                .verifyComplete();
+
+        Mockito.verify(capabilityRepository).deleteById(capId);
+        Mockito.verify(repository).deleteById(bootcampId);
+    }
+
+    @Test
+    void deleteBootcamp_shouldNotDeleteCapabilityUsedByOthers() {
+
+        String bootcampId = "boot1";
+        String capId = "cap1";
+
+        Bootcamp b = Bootcamp.builder()
+                .id(bootcampId)
+                .nombre("FullStack")
+                .capabilityIds(List.of(capId))
+                .build();
+
+        Capability cap = Capability.builder()
+                .id(capId)
+                .nombre("Frontend")
+                .technologyIds(List.of("t1"))
+                .build();
+
+        Mockito.when(repository.findById(bootcampId))
+                .thenReturn(Mono.just(b));
+
+        Mockito.when(repository.countByCapabilityIdsContains(capId))
+                .thenReturn(Mono.just(2L));
+
+        Mockito.when(capabilityRepository.findById(capId))
+                .thenReturn(Mono.just(cap));
+
+        Mockito.when(repository.deleteById(bootcampId))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.deleteBootcamp(bootcampId))
+                .verifyComplete();
+
+        Mockito.verify(capabilityRepository, Mockito.never()).deleteById(capId);
+        Mockito.verify(technologyRepository, Mockito.never()).deleteById(Mockito.any());
+    }
+
+    @Test
+    void deleteBootcamp_shouldDeleteTechnologiesNotUsedByOthers() {
+
+        String bootcampId = "boot1";
+        String capId = "cap1";
+        String techId = "t1";
+
+        Bootcamp b = Bootcamp.builder()
+                .id(bootcampId)
+                .capabilityIds(List.of(capId))
+                .build();
+
+        Capability cap = Capability.builder()
+                .id(capId)
+                .technologyIds(List.of(techId))
+                .build();
+
+        Mockito.when(repository.findById(bootcampId))
+                .thenReturn(Mono.just(b));
+
+        Mockito.when(capabilityRepository.findById(capId))
+                .thenReturn(Mono.just(cap));
+
+        Mockito.when(repository.countByCapabilityIdsContains(capId))
+                .thenReturn(Mono.just(1L));
+
+        Mockito.when(capabilityRepository.countByTechnologyIdsContains(techId))
+                .thenReturn(Mono.just(1L));
+
+        Mockito.when(technologyRepository.deleteById(techId))
+                .thenReturn(Mono.empty());
+
+        Mockito.when(capabilityRepository.deleteById(capId))
+                .thenReturn(Mono.empty());
+
+        Mockito.when(repository.deleteById(bootcampId))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.deleteBootcamp(bootcampId))
+                .verifyComplete();
+
+        Mockito.verify(technologyRepository).deleteById(techId);
+        Mockito.verify(capabilityRepository).deleteById(capId);
+        Mockito.verify(repository).deleteById(bootcampId);
+    }
+
+    @Test
+    void deleteBootcamp_shouldNotDeleteTechnologyUsedByOthers() {
+
+        String bootcampId = "boot1";
+        String capId = "cap1";
+        String techId = "t1";
+
+        Bootcamp b = Bootcamp.builder()
+                .id(bootcampId)
+                .capabilityIds(List.of(capId))
+                .build();
+
+        Capability cap = Capability.builder()
+                .id(capId)
+                .technologyIds(List.of(techId))
+                .build();
+
+        Mockito.when(repository.findById(bootcampId))
+                .thenReturn(Mono.just(b));
+
+        Mockito.when(capabilityRepository.findById(capId))
+                .thenReturn(Mono.just(cap));
+
+        Mockito.when(repository.countByCapabilityIdsContains(capId))
+                .thenReturn(Mono.just(1L)); 
+
+        Mockito.when(capabilityRepository.countByTechnologyIdsContains(techId))
+                .thenReturn(Mono.just(3L));
+
+        Mockito.when(capabilityRepository.deleteById(capId))
+                .thenReturn(Mono.empty());
+
+        Mockito.when(repository.deleteById(bootcampId))
+                .thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.deleteBootcamp(bootcampId))
+                .verifyComplete();
+
+        Mockito.verify(technologyRepository, Mockito.never()).deleteById(techId);
+        Mockito.verify(capabilityRepository).deleteById(capId);
+    }
 }

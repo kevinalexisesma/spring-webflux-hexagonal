@@ -14,4 +14,8 @@ public interface CapabilityRepository {
     Mono<Boolean> existsByNombre(String nombre);
 
     Mono<Capability> findById(String id);
+
+    Mono<Void> deleteById(String id);
+
+    Mono<Long> countByTechnologyIdsContains(String technologyId);
 }
