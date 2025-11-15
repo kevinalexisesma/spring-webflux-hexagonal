@@ -36,4 +36,14 @@ public class MongoCapabilityRepositoryAdapter implements CapabilityRepository {
     public Mono<Capability> findById(String id) {
         return repository.findById(id);
     }
+
+    @Override
+    public Mono<Long> countByTechnologyIdsContains(String technologyId) {
+        return repository.countByTechnologyIdsContains(technologyId);
+    }
+
+    @Override
+    public Mono<Void> deleteById(String id) {
+        return repository.deleteById(id);
+    }
 }

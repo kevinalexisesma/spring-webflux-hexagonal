@@ -42,4 +42,9 @@ public class MongoBootcampRepositoryAdapter implements BootcampRepository {
         return repository.deleteById(id);
     }
 
+    @Override
+    public Mono<Long> countByCapabilityIdsContains(String capabilityId) {
+        return repository.countByCapabilityIdsContains(capabilityId);
+    }
+
 }

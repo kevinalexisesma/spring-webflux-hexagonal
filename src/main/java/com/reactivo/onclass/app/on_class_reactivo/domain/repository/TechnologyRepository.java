@@ -13,4 +13,6 @@ public interface TechnologyRepository {
     Mono<Boolean> existsByNombre(String nombre);
 
     Mono<Technology> findById(String id);
+
+    Mono<Void> deleteById(String id);
 }
