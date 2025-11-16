@@ -1,7 +1,6 @@
 package com.reactivo.onclass.app.on_class_reactivo.domain.usecase;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -9,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
-import com.reactivo.onclass.app.on_class_reactivo.domain.model.Technology;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
 

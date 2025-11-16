@@ -2,9 +2,6 @@ package com.reactivo.onclass.app.on_class_reactivo.domain.usecase;
 
 import java.util.List;
 
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Bootcamp;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Technology;
