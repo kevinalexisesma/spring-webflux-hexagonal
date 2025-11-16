@@ -5,9 +5,11 @@ import org.springframework.context.annotation.Configuration;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.EnrollmentRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.BootcampUseCase;
 import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.CapabilityUseCase;
+import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.EnrollmentUseCase;
 import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.TechnologyUseCase;
 
 @Configuration
@@ -25,5 +27,10 @@ public class UseCaseConfig {
     @Bean
     public BootcampUseCase bootcampUseCase(BootcampRepository repository, CapabilityRepository capabilityRepository, TechnologyRepository technologyRepository) {
         return new BootcampUseCase(repository, capabilityRepository, technologyRepository);
+    }
+
+    @Bean
+    public EnrollmentUseCase enrollmentUseCase(EnrollmentRepository enrollmentRepository, BootcampRepository bootcampRepository) {
+        return new EnrollmentUseCase(enrollmentRepository, bootcampRepository);
     }
 }
