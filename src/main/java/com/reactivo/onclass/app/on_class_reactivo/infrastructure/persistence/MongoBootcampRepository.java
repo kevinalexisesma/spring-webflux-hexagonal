@@ -9,4 +9,6 @@ import reactor.core.publisher.Mono;
 public interface MongoBootcampRepository extends ReactiveMongoRepository<Bootcamp, String> {
 
     Mono<Boolean> existsByNombre(String nombre);
+
+    Mono<Long> countByCapabilityIdsContains(String capabilityId);
 }

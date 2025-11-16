@@ -16,4 +16,6 @@ public interface BootcampRepository {
     Mono<Bootcamp> findById(String id);
 
     Mono<Void> deleteById(String id);
+
+    Mono<Long> countByCapabilityIdsContains(String capabilityId);
 }

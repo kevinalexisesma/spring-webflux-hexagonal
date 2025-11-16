@@ -103,4 +103,40 @@ public class BootcampUseCase {
                 });
     }
 
+    @Transactional
+    public Mono<Void> deleteBootcamp(String bootcampId) {
+
+        return repository.findById(bootcampId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Bootcamp no encontrado")))
+                .flatMap(bootcamp -> {
+                    List<String> capsIds = bootcamp.getCapabilityIds();
+                    
+                    return Flux.fromIterable(capsIds)
+                            .flatMap(capId -> capabilityRepository.findById(capId)
+                                    .flatMap(cap ->
+
+                                    repository.countByCapabilityIdsContains(capId)
+                                            .flatMap(count -> {
+                                                if (count > 1) {
+                                                    return Mono.empty(); // NO ELIMINAR
+                                                }
+
+                                                // eliminar tecnologías solo si no están en otras caps
+                                                return Flux.fromIterable(cap.getTechnologyIds())
+                                                        .flatMap(techId -> capabilityRepository
+                                                                .countByTechnologyIdsContains(techId)
+                                                                .flatMap(techCount -> {
+                                                                    if (techCount > 1) {
+                                                                        return Mono.empty();
+                                                                    }
+                                                                    return technologyRepository.deleteById(techId);
+                                                                }))
+                                                        .then(capabilityRepository.deleteById(capId));
+                                            })
+
+                                    ))
+                            .then(repository.deleteById(bootcampId));
+                });
+    }
+
 }

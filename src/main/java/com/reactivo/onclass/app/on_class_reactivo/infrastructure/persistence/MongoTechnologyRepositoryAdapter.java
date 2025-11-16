@@ -36,4 +36,9 @@ public class MongoTechnologyRepositoryAdapter implements TechnologyRepository {
     public Mono<Technology> findById(String id) {
         return repository.findById(id);
     }
+
+    @Override
+    public Mono<Void> deleteById(String id) {
+        return repository.deleteById(id);
+    }
 }
