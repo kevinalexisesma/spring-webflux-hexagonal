@@ -37,4 +37,14 @@ public class MongoEnrollmentRepositoryAdapter implements EnrollmentRepository {
         return repository.save(enrollment);
     }
 
+    @Override
+    public Mono<Long> countByBootcampId(String bootcampId) {
+        return repository.countByBootcampId(bootcampId);
+    }
+
+    @Override
+    public Flux<Enrollment> findByBootcampId(String bootcampId) {
+        return repository.findByBootcampId(bootcampId);
+    }
+
 }
