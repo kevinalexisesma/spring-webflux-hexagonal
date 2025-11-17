@@ -10,8 +10,6 @@ import com.reactivo.onclass.app.on_class_reactivo.domain.usecase.EnrollmentUseCa
 import reactor.core.publisher.Mono;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 
-import org.springframework.http.MediaType;
-
 @Component
 public class EnrollmentHandler {
 

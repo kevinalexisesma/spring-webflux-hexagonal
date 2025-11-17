@@ -1,12 +1,15 @@
 package com.reactivo.onclass.app.on_class_reactivo.domain.usecase;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.transaction.annotation.Transactional;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Bootcamp;
+import com.reactivo.onclass.app.on_class_reactivo.domain.model.BootcampReport;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Technology;
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampReportRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
@@ -19,12 +22,17 @@ public class BootcampUseCase {
     private final BootcampRepository repository;
     private final CapabilityRepository capabilityRepository;
     private final TechnologyRepository technologyRepository;
+    private final BootcampReportRepository reportRepository;
 
-    public BootcampUseCase(BootcampRepository repository, CapabilityRepository capabilityRepository,
-            TechnologyRepository technologyRepository) {
+    public BootcampUseCase(
+            BootcampRepository repository,
+            CapabilityRepository capabilityRepository,
+            TechnologyRepository technologyRepository,
+            BootcampReportRepository reportRepository) {
         this.repository = repository;
         this.capabilityRepository = capabilityRepository;
         this.technologyRepository = technologyRepository;
+        this.reportRepository = reportRepository;
     }
 
     public Mono<Bootcamp> createBootcamp(Bootcamp bootcamp) {
@@ -43,6 +51,32 @@ public class BootcampUseCase {
                         return Mono.error(new IllegalArgumentException("El nombre del bootcamp ya existe."));
                     }
                     return repository.save(bootcamp);
+                })
+                .flatMap(saved -> {
+
+                    // ✔ CONTAR TECNOLOGÍAS ASOCIADAS
+                    Mono<Integer> totalTecnologias = capabilityRepository
+                            .findAllById(saved.getCapabilityIds())
+                            .flatMap(cap -> technologyRepository.findAllById(cap.getTechnologyIds()))
+                            .count()
+                            .map(Long::intValue);
+
+                    // ✔ CREAR REPORTE ASÍNCRONAMENTE
+                    totalTecnologias.flatMap(totalTechs -> {
+                        BootcampReport report = BootcampReport.builder()
+                                .bootcampId(saved.getId())
+                                .nombreBootcamp(saved.getNombre())
+                                .cantidadCapacidades(saved.getCapabilityIds().size())
+                                .cantidadTecnologias(totalTechs)
+                                .cantidadPersonasInscritas(0)
+                                .fechaRegistro(LocalDate.now())
+                                .build();
+
+                        return reportRepository.save(report);
+                    })
+                            .subscribe(); // *** EJECUTAR EN PARALELO SIN BLOQUEAR ***
+
+                    return Mono.just(saved);
                 });
     }
 
@@ -112,7 +146,7 @@ public class BootcampUseCase {
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("Bootcamp no encontrado")))
                 .flatMap(bootcamp -> {
                     List<String> capsIds = bootcamp.getCapabilityIds();
-                    
+
                     return Flux.fromIterable(capsIds)
                             .flatMap(capId -> capabilityRepository.findById(capId)
                                     .flatMap(cap ->

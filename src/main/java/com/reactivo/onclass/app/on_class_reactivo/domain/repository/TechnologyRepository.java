@@ -15,4 +15,6 @@ public interface TechnologyRepository {
     Mono<Technology> findById(String id);
 
     Mono<Void> deleteById(String id);
+
+    Flux<Technology> findAllById(Iterable<String> ids);
 }
