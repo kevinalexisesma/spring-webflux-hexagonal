@@ -14,4 +14,8 @@ public interface MongoEnrollmentRepository extends ReactiveMongoRepository<Enrol
     Mono<Long> countByPersonId(String personId);
 
     Mono<Boolean> existsByPersonIdAndBootcampId(String personId, String bootcampId);
+
+    Mono<Long> countByBootcampId(String bootcampId);
+
+    Flux<Enrollment> findByBootcampId(String bootcampId);
 }

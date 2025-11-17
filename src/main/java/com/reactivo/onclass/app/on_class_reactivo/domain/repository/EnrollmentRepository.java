@@ -15,4 +15,8 @@ public interface EnrollmentRepository {
 
     Mono<Enrollment> save(Enrollment enrollment);
 
+    Mono<Long> countByBootcampId(String bootcampId);
+
+    Flux<Enrollment> findByBootcampId(String bootcampId);
+
 }

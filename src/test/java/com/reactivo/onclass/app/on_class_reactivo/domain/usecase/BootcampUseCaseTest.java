@@ -53,9 +53,12 @@ public class BootcampUseCaseTest {
                 .descripcion("Desarrollo completo")
                 .fechaLanzamiento(LocalDate.now())
                 .duracion("10 semanas")
-                .capabilityIds(List.of("1"))
+                .capabilityIds(List.of("c1"))
                 .build();
 
+        Capability c1 = Capability.builder().id("c1").technologyIds(List.of("t1")).build();
+
+        when(capabilityRepository.findAllById(List.of("c1"))).thenReturn(Flux.just(c1));
         when(repository.existsByNombre("Full Stack")).thenReturn(Mono.just(false));
         when(repository.save(any(Bootcamp.class))).thenReturn(Mono.just(bootcamp));
 
