@@ -1,6 +1,9 @@
 package com.reactivo.onclass.app.on_class_reactivo.domain.usecase;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -12,8 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Bootcamp;
+import com.reactivo.onclass.app.on_class_reactivo.domain.model.BootcampReport;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Capability;
 import com.reactivo.onclass.app.on_class_reactivo.domain.model.Technology;
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampReportRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.TechnologyRepository;
@@ -29,6 +34,7 @@ public class BootcampUseCaseTest {
     private BootcampRepository repository;
     private CapabilityRepository capabilityRepository;
     private TechnologyRepository technologyRepository;
+    private BootcampReportRepository reportRepository;
     private BootcampUseCase useCase;
 
     @BeforeEach
@@ -36,7 +42,8 @@ public class BootcampUseCaseTest {
         repository = Mockito.mock(BootcampRepository.class);
         capabilityRepository = Mockito.mock(CapabilityRepository.class);
         technologyRepository = Mockito.mock(TechnologyRepository.class);
-        useCase = new BootcampUseCase(repository, capabilityRepository, technologyRepository);
+        reportRepository = Mockito.mock(BootcampReportRepository.class);
+        useCase = new BootcampUseCase(repository, capabilityRepository, technologyRepository, reportRepository);
     }
 
     @Test
@@ -232,9 +239,8 @@ public class BootcampUseCaseTest {
                 .thenReturn(Mono.empty());
 
         StepVerifier.create(useCase.deleteBootcamp(id))
-                .expectErrorMatches(e ->
-                        e instanceof IllegalArgumentException &&
-                                e.getMessage().equals("Bootcamp no encontrado"))
+                .expectErrorMatches(e -> e instanceof IllegalArgumentException &&
+                        e.getMessage().equals("Bootcamp no encontrado"))
                 .verify();
 
         Mockito.verify(repository).findById(id);
@@ -388,7 +394,7 @@ public class BootcampUseCaseTest {
                 .thenReturn(Mono.just(cap));
 
         Mockito.when(repository.countByCapabilityIdsContains(capId))
-                .thenReturn(Mono.just(1L)); 
+                .thenReturn(Mono.just(1L));
 
         Mockito.when(capabilityRepository.countByTechnologyIdsContains(techId))
                 .thenReturn(Mono.just(3L));
@@ -405,4 +411,39 @@ public class BootcampUseCaseTest {
         Mockito.verify(technologyRepository, Mockito.never()).deleteById(techId);
         Mockito.verify(capabilityRepository).deleteById(capId);
     }
+
+    @Test
+    void createBootcamp_ShouldCreateReportAsync() {
+
+        Bootcamp bootcamp = Bootcamp.builder()
+                .id("b1")
+                .nombre("Bootcamp Web")
+                .capabilityIds(List.of("c1", "c2"))
+                .build();
+
+        Capability c1 = Capability.builder().id("c1").technologyIds(List.of("t1")).build();
+        Capability c2 = Capability.builder().id("c2").technologyIds(List.of("t2", "t3")).build();
+
+        Technology t1 = Technology.builder().id("t1").build();
+        Technology t2 = Technology.builder().id("t2").build();
+        Technology t3 = Technology.builder().id("t3").build();
+
+        when(repository.existsByNombre("Bootcamp Web")).thenReturn(Mono.just(false));
+        when(repository.save(any())).thenReturn(Mono.just(bootcamp));
+
+        when(capabilityRepository.findAllById(List.of("c1", "c2")))
+                .thenReturn(Flux.just(c1, c2));
+
+        when(technologyRepository.findAllById(anyList()))
+                .thenReturn(Flux.just(t1, t2, t3));
+
+        when(reportRepository.save(any())).thenReturn(Mono.just(new BootcampReport()));
+
+        StepVerifier.create(useCase.createBootcamp(bootcamp))
+                .expectNext(bootcamp)
+                .verifyComplete();
+
+        verify(reportRepository, timeout(500).times(1)).save(any());
+    }
+
 }

@@ -18,4 +18,6 @@ public interface CapabilityRepository {
     Mono<Void> deleteById(String id);
 
     Mono<Long> countByTechnologyIdsContains(String technologyId);
+
+    Flux<Capability> findAllById(Iterable<String> ids);
 }

@@ -3,6 +3,7 @@ package com.reactivo.onclass.app.on_class_reactivo.application.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampReportRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.BootcampRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.CapabilityRepository;
 import com.reactivo.onclass.app.on_class_reactivo.domain.repository.EnrollmentRepository;
@@ -20,17 +21,20 @@ public class UseCaseConfig {
     }
 
     @Bean
-    public CapabilityUseCase capabilityUseCase(CapabilityRepository repository, TechnologyRepository technologyRepository) {
+    public CapabilityUseCase capabilityUseCase(CapabilityRepository repository,
+            TechnologyRepository technologyRepository) {
         return new CapabilityUseCase(repository, technologyRepository);
     }
 
     @Bean
-    public BootcampUseCase bootcampUseCase(BootcampRepository repository, CapabilityRepository capabilityRepository, TechnologyRepository technologyRepository) {
-        return new BootcampUseCase(repository, capabilityRepository, technologyRepository);
+    public BootcampUseCase bootcampUseCase(BootcampRepository repository, CapabilityRepository capabilityRepository,
+            TechnologyRepository technologyRepository, BootcampReportRepository reportRepository) {
+        return new BootcampUseCase(repository, capabilityRepository, technologyRepository, reportRepository);
     }
 
     @Bean
-    public EnrollmentUseCase enrollmentUseCase(EnrollmentRepository enrollmentRepository, BootcampRepository bootcampRepository) {
+    public EnrollmentUseCase enrollmentUseCase(EnrollmentRepository enrollmentRepository,
+            BootcampRepository bootcampRepository) {
         return new EnrollmentUseCase(enrollmentRepository, bootcampRepository);
     }
 }

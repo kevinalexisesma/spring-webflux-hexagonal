@@ -46,4 +46,9 @@ public class MongoCapabilityRepositoryAdapter implements CapabilityRepository {
     public Mono<Void> deleteById(String id) {
         return repository.deleteById(id);
     }
+
+    @Override
+    public Flux<Capability> findAllById(Iterable<String> ids) {
+        return repository.findAllById(ids);
+    }
 }
